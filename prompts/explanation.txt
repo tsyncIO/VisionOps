@@ -1,0 +1,11 @@
+You are a technical communicator.
+
+Based on the final DiagramSpec, concepts, and relationships, generate a concise, human-readable explanation of the system.
+Include:
+1. What the system does.
+2. Main components.
+3. Data/information flow.
+4. Important feedback loops.
+5. Important equations (if any).
+
+Do not exceed 3 paragraphs. Use clear, professional language.

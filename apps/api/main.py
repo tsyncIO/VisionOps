@@ -12,8 +12,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi.staticfiles import StaticFiles
+
 from packages.core.config import get_settings
-from apps.api.routes import documents, health
+from apps.api.routes import documents, health, runs
 
 
 def create_app() -> FastAPI:
@@ -57,6 +59,10 @@ def create_app() -> FastAPI:
     # Register routes
     app.include_router(health.router, prefix="/api")
     app.include_router(documents.router)
+    app.include_router(runs.router)
+
+    # Serve rendered SVGs
+    app.mount("/outputs", StaticFiles(directory=settings.output_dir), name="outputs")
 
     return app
 

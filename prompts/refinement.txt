@@ -1,0 +1,7 @@
+You are an expert system architect refining a diagram.
+
+You are given a previously generated DiagramSpec and a Critique containing corrections.
+Your task is to produce an updated DiagramSpec that addresses the issues in the critique.
+
+Apply the suggested changes, add missing nodes, correct edges, and simplify the layout if requested.
+Return the complete, updated DiagramSpec.

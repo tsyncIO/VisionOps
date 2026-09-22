@@ -42,3 +42,43 @@ EVENT_REFINEMENT_STARTED = "refinement_started"
 EVENT_FINAL_RESULT = "final_result"
 EVENT_RUN_COMPLETED = "run_completed"
 EVENT_RUN_FAILED = "run_failed"
+
+
+import asyncio
+from typing import Dict, Set
+
+class EventStreamer:
+    """Manages Server-Sent Events subscriptions and broadcasting."""
+    
+    def __init__(self):
+        self._queues: Dict[str, Set[asyncio.Queue[VisionOpsEvent]]] = {}
+        
+    def subscribe(self, run_id: str) -> asyncio.Queue[VisionOpsEvent]:
+        """Subscribe to events for a specific run."""
+        queue = asyncio.Queue()
+        if run_id not in self._queues:
+            self._queues[run_id] = set()
+        self._queues[run_id].add(queue)
+        return queue
+        
+    def unsubscribe(self, run_id: str, queue: asyncio.Queue[VisionOpsEvent]) -> None:
+        """Unsubscribe from events."""
+        if run_id in self._queues and queue in self._queues[run_id]:
+            self._queues[run_id].remove(queue)
+            if not self._queues[run_id]:
+                del self._queues[run_id]
+                
+    async def emit(self, run_id: str, event_type: str, data: dict[str, Any] = None) -> None:
+        """Broadcast an event to all subscribers for a run."""
+        if data is None:
+            data = {}
+            
+        event = VisionOpsEvent(
+            run_id=run_id,
+            event=event_type,
+            data=data
+        )
+        
+        if run_id in self._queues:
+            for queue in self._queues[run_id]:
+                await queue.put(event)
