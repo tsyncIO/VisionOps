@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from packages.core.config import get_settings
-from apps.api.routes import health
+from apps.api.routes import documents, health
 
 
 def create_app() -> FastAPI:
@@ -56,6 +56,7 @@ def create_app() -> FastAPI:
 
     # Register routes
     app.include_router(health.router, prefix="/api")
+    app.include_router(documents.router)
 
     return app
 
