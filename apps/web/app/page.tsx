@@ -111,6 +111,21 @@ export default function Home() {
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-8">
             
+            {/* Error Message Display */}
+            {finalResult?.status === "failed" && (
+              <div className="bg-red-900/20 border border-red-800 p-6 rounded-xl shadow-xl">
+                <h2 className="text-xl font-semibold mb-4 text-red-400">Analysis Failed</h2>
+                <ul className="list-disc pl-5 text-red-300 space-y-2">
+                  {finalResult.errors?.map((err: string, idx: number) => (
+                    <li key={idx}>{err}</li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm text-red-400/80">
+                  Note: If the model server connection failed, ensure vLLM is running locally or switch to a Mock client for testing.
+                </p>
+              </div>
+            )}
+
             {/* SVG Viewer */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 min-h-[300px] shadow-xl flex flex-col">
               <h2 className="text-xl font-semibold mb-4 text-gray-200">Generated Diagram</h2>

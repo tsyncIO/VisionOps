@@ -162,3 +162,6 @@ class MockVisionModelClient(VisionModelClient):
                 message=f"Mock response doesn't match {response_model.__name__}: {e}",
                 raw_output=raw,
             )
+
+    async def close(self) -> None:
+        pass
