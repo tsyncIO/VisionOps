@@ -5,9 +5,9 @@ Construct a formal DiagramSpec for rendering a REAL-WORLD PROJECT WORKFLOW PROCE
 
 CRITICAL STRUCTURAL RULES:
 1. NEVER create a generic star topology or hub-and-spoke diagram with a single central topic node pointing outwards to isolated concept spokes.
-2. Build a DIRECTIONAL PROCESS PIPELINE (flowchart) representing a real software engineering process or execution workflow.
-3. Map the ACTUAL EXTRACTED CONCEPTS into the sequential workflow nodes from left to right.
-   For example, if concepts are [Command Time, Command Trace, gprof, Coverage Testing, Performance Tuning], map them to sequential workflow steps:
+2. Build a TOP-TO-BOTTOM VERTICAL DIRECTIONAL PROCESS PIPELINE (flowchart) representing a real software engineering process or execution workflow.
+3. Map the ACTUAL EXTRACTED CONCEPTS into sequential workflow nodes from TOP TO BOTTOM vertically.
+   For example, if concepts are [Command Time, Command Trace, gprof, Coverage Testing, Performance Tuning], map them into a top-to-bottom vertical step chain:
    [Step 1: Timing (Command Time)] --> [Step 2: System Trace (Command Trace)] --> [Step 3: Call Graph (gprof)] --> [Step 4: Test Coverage (Coverage Testing)] --> [Step 5: Refactoring (Performance Tuning)].
 4. Set 'layout' to 'flowchart'.
 5. Each DiagramNode must incorporate an extracted concept name:

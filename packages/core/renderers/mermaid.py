@@ -154,15 +154,18 @@ class MermaidRenderer(DiagramRenderer):
                     
                 lines.append(f'    {node.id}{shape_start}"{escaped_label}"{shape_end}')
                 
-            # Edges
-            for edge in diagram.edges:
-                label = edge.label
-                arrow = "<-->" if edge.direction == "bidirectional" else "-->"
-                    
-                if label:
-                    escaped_edge_label = label.replace('"', '#quot;')
-                    lines.append(f'    {edge.source} {arrow}|"{escaped_edge_label}"| {edge.target}')
-                else:
-                    lines.append(f'    {edge.source} {arrow} {edge.target}')
+            # Always enforce a strict vertical top-to-bottom process chain across nodes
+            if len(diagram.nodes) > 1:
+                # Map existing edge labels by pair if available
+                label_map = {(e.source, e.target): e.label for e in diagram.edges if e.label}
+                for i in range(len(diagram.nodes) - 1):
+                    src_id = diagram.nodes[i].id
+                    tgt_id = diagram.nodes[i+1].id
+                    lbl = label_map.get((src_id, tgt_id)) or next((e.label for e in diagram.edges if (e.source == src_id or e.target == tgt_id) and e.label), None)
+                    if lbl:
+                        escaped_lbl = lbl.replace('"', '#quot;')
+                        lines.append(f'    {src_id} -->|"{escaped_lbl}"| {tgt_id}')
+                    else:
+                        lines.append(f'    {src_id} --> {tgt_id}')
 
         return "\n".join(lines)

@@ -21,7 +21,7 @@ export default function Home() {
   useEffect(() => {
     if (finalResult?.rendered_diagram) {
       const filename = finalResult.rendered_diagram.split('/').pop();
-      fetch(`http://localhost:8001/outputs/${filename}`)
+      fetch(`http://localhost:8001/outputs/${filename}?t=${Date.now()}`)
         .then((res) => res.text())
         .then((text) => setSvgXml(text))
         .catch(() => setSvgXml(""));
@@ -444,9 +444,9 @@ export default function Home() {
                 {finalResult?.rendered_diagram ? (
                   <div className="w-full h-full flex flex-col items-center justify-start py-4 min-h-[550px] overflow-auto">
                     <div 
-                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full min-w-[1200px] min-h-[500px] rounded-xl bg-slate-950 p-6 shadow-2xl border border-indigo-900/50 [&>svg]:w-full [&>svg]:h-full [&>svg]:min-h-[550px] [&>svg]:min-w-[1200px] [&>svg]:block"
+                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full min-h-[500px] rounded-xl bg-slate-950 p-6 shadow-2xl border border-indigo-900/50 [&>svg]:w-auto [&>svg]:h-full [&>svg]:min-h-[550px] [&>svg]:max-w-full [&>svg]:block"
                       style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
-                      dangerouslySetInnerHTML={{ __html: svgXml || `<img src="http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}" class="w-full h-full object-contain" />` }}
+                      dangerouslySetInnerHTML={{ __html: svgXml || `<img src="http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}?t=${Date.now()}" class="h-full w-auto object-contain" />` }}
                     />
                     <div className="mt-6 flex items-center gap-4">
                       <a 
