@@ -57,21 +57,10 @@ class MermaidRenderer(DiagramRenderer):
                 import re
                 svg_content = output_path.read_text(encoding="utf-8")
                 
-                # Extract viewBox to ensure vertical headroom
-                match = re.search(r'viewBox="([0-9.-]+)\s+([0-9.-]+)\s+([0-9.-]+)\s+([0-9.-]+)"', svg_content)
-                if match:
-                    vx, vy, vw, vh = match.groups()
-                    vh_val = float(vh)
-                    # If viewBox height is under 400px, expand height so large 42px text and blocks fit with headroom
-                    if vh_val < 450:
-                        new_vh = vh_val * 3.5
-                        new_vy = float(vy) - (new_vh - vh_val) / 2
-                        svg_content = svg_content.replace(match.group(0), f'viewBox="{vx} {new_vy} {vw} {new_vh}"')
-
                 # Replace fixed width/height with 100% responsive bounds
                 svg_content = re.sub(r'width="[0-9.]+(px)?"', 'width="100%"', svg_content, count=1)
                 svg_content = re.sub(r'height="[0-9.]+(px)?"', 'height="100%"', svg_content, count=1)
-                svg_content = re.sub(r'style="[^"]*max-width:[^"]*"', 'style="width: 100%; height: 100%; min-width: 1200px; min-height: 500px;"', svg_content)
+                svg_content = re.sub(r'style="[^"]*max-width:[^"]*"', 'style="width: 100%; height: 100%; min-height: 800px;"', svg_content)
                 
                 if 'preserveAspectRatio' not in svg_content:
                     svg_content = re.sub(r'<svg ', '<svg preserveAspectRatio="xMidYMid meet" ', svg_content, count=1)
@@ -132,7 +121,7 @@ class MermaidRenderer(DiagramRenderer):
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
         """Convert DiagramSpec to Mermaid syntax with modern high-impact styling."""
         lines = [
-            "%%{init: { 'theme': 'dark', 'flowchart': { 'nodeSpacing': 80, 'rankSpacing': 100, 'padding': 40, 'useMaxWidth': false }, 'themeVariables': { 'darkMode': true, 'fontSize': '36px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+            "%%{init: { 'theme': 'dark', 'flowchart': { 'defaultRenderer': 'dagre', 'curve': 'basis', 'nodeSpacing': 60, 'rankSpacing': 100, 'padding': 35, 'useMaxWidth': false }, 'themeVariables': { 'darkMode': true, 'fontSize': '36px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
         ]
         
         if diagram.layout == "sequence":
@@ -150,8 +139,8 @@ class MermaidRenderer(DiagramRenderer):
                 arrow = "->>" if edge.direction == "forward" else "-->>"
                 lines.append(f'    {edge.source}{arrow}{edge.target}: {label}')
         else:
-            # Force Top-Down (TD) layout for all flowcharts so process steps stack vertically and fit the screen panel
-            lines.append("graph TD")
+            # Force Top-to-Bottom (TB) vertical layout for all flowcharts so steps stack cleanly top-to-bottom
+            lines.append("flowchart TB")
             
             # Nodes
             for node in diagram.nodes:
