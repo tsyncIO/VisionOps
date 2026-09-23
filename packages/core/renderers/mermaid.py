@@ -57,51 +57,45 @@ class MermaidRenderer(DiagramRenderer):
                 import re
                 svg_content = output_path.read_text(encoding="utf-8")
                 
-                # Replace fixed width/height with 100% responsive bounds
+                # Replace fixed width/height with responsive bounds
                 svg_content = re.sub(r'width="[0-9.]+(px)?"', 'width="100%"', svg_content, count=1)
                 svg_content = re.sub(r'height="[0-9.]+(px)?"', 'height="100%"', svg_content, count=1)
-                svg_content = re.sub(r'style="[^"]*max-width:[^"]*"', 'style="width: 100%; height: 100%; min-height: 800px;"', svg_content)
+                svg_content = re.sub(r'style="[^"]*max-width:[^"]*"', 'style="width: 100%; height: auto;"', svg_content)
                 
                 if 'preserveAspectRatio' not in svg_content:
                     svg_content = re.sub(r'<svg ', '<svg preserveAspectRatio="xMidYMid meet" ', svg_content, count=1)
 
-                # Inject high-impact CSS for massive block cards (42px text, 450px wide blocks)
+                # Inject modern high-clarity CSS for diagram cards and edges
                 high_impact_css = """
 /* VisionOps High-Impact Custom Diagram Styles */
 .node rect, .node polygon, .node path, .node circle {
-    stroke-width: 5px !important;
+    stroke-width: 2.5px !important;
     fill: #1e1b4b !important;
     stroke: #818cf8 !important;
-    rx: 20px !important;
-    ry: 20px !important;
-    filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.7)) !important;
-}
-.node foreignObject {
-    min-width: 420px !important;
-    min-height: 120px !important;
-    overflow: visible !important;
+    rx: 12px !important;
+    ry: 12px !important;
+    filter: drop-shadow(0px 6px 14px rgba(0,0,0,0.6)) !important;
 }
 .nodeLabel, .node .label, .node span, .node div, foreignObject div {
-    font-size: 42px !important;
-    font-weight: 900 !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
     color: #ffffff !important;
     fill: #ffffff !important;
-    line-height: 1.4 !important;
-    padding: 20px 30px !important;
+    line-height: 1.35 !important;
     text-align: center !important;
 }
 .edgeLabel, .edgeLabel span, .edgeLabel div {
-    font-size: 30px !important;
-    font-weight: 800 !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
     color: #38bdf8 !important;
     fill: #38bdf8 !important;
     background-color: #0f172a !important;
-    padding: 8px 18px !important;
-    border-radius: 10px !important;
-    border: 2px solid rgba(56, 189, 248, 0.5) !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
 .edgePath .path {
-    stroke-width: 5.5px !important;
+    stroke-width: 2.5px !important;
     stroke: #38bdf8 !important;
 }
 """
@@ -121,7 +115,7 @@ class MermaidRenderer(DiagramRenderer):
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
         """Convert DiagramSpec to Mermaid syntax with modern high-impact styling."""
         lines = [
-            "%%{init: { 'theme': 'dark', 'flowchart': { 'defaultRenderer': 'dagre', 'curve': 'basis', 'nodeSpacing': 60, 'rankSpacing': 100, 'padding': 35, 'useMaxWidth': false }, 'themeVariables': { 'darkMode': true, 'fontSize': '36px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+            "%%{init: { 'theme': 'dark', 'flowchart': { 'defaultRenderer': 'dagre', 'curve': 'basis', 'nodeSpacing': 50, 'rankSpacing': 60, 'padding': 24, 'useMaxWidth': false }, 'themeVariables': { 'darkMode': true, 'fontSize': '15px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
         ]
         
         if diagram.layout == "sequence":

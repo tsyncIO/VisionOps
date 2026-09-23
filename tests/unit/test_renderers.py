@@ -24,9 +24,9 @@ def test_mermaid_generate():
     
     mermaid_src = renderer._generate_mermaid(diagram)
     
-    assert "graph TD" in mermaid_src
-    assert 'A["Node A"]' in mermaid_src
-    assert 'B("Node B")' in mermaid_src
+    assert "flowchart TB" in mermaid_src
+    assert 'A(["Node A"])' in mermaid_src
+    assert 'B["Node B"]' in mermaid_src
     assert 'A -->|"Flow"| B' in mermaid_src
 
 

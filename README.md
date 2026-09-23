@@ -2,6 +2,8 @@
 
 > Agentic Multimodal Visual Analytics & Reasoning Platform
 
+![VisionOps Interactive Demo](assets/demo.gif)
+
 VisionOps is a local-first agentic multimodal AI platform that analyzes visual information, constructs structured representations, performs reasoning, generates visual outputs, evaluates those outputs through visual critique, and iteratively refines them.
 
 ## Architecture
@@ -68,8 +70,7 @@ uv run pytest
 ├── specs/            # Specifications
 ├── tests/            # Test suite
 ├── scripts/          # Utility scripts
-├── data/             # Runtime data (uploads, outputs)
-└── AGENTS.md         # Engineering rules
+└── data/             # Runtime data (uploads, outputs)
 ```
 
 ## Technology Stack

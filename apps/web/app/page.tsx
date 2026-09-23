@@ -13,7 +13,7 @@ export default function Home() {
   const [svgXml, setSvgXml] = useState<string>("");
 
   // Diagram Viewer Controls
-  const [zoomLevel, setZoomLevel] = useState<number>(200);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [viewFitMode, setViewFitMode] = useState<"adaptive" | "fit" | "full">("full");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -444,9 +444,9 @@ export default function Home() {
                 {finalResult?.rendered_diagram ? (
                   <div className="w-full h-full flex flex-col items-center justify-start py-4 min-h-[550px] overflow-auto">
                     <div 
-                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full min-h-[500px] rounded-xl bg-slate-950 p-6 shadow-2xl border border-indigo-900/50 [&>svg]:w-auto [&>svg]:h-full [&>svg]:min-h-[550px] [&>svg]:max-w-full [&>svg]:block"
+                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full min-h-[450px] rounded-xl bg-slate-950 p-6 shadow-2xl border border-indigo-900/50 [&>svg]:w-auto [&>svg]:h-auto [&>svg]:max-h-[600px] [&>svg]:max-w-full [&>svg]:block"
                       style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
-                      dangerouslySetInnerHTML={{ __html: svgXml || `<img src="http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}?t=${Date.now()}" class="h-full w-auto object-contain" />` }}
+                      dangerouslySetInnerHTML={{ __html: svgXml || `<img src="http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}?t=${Date.now()}" class="h-auto w-auto max-h-[550px] object-contain" />` }}
                     />
                     <div className="mt-6 flex items-center gap-4">
                       <a 
