@@ -1,36 +1,44 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { uploadDocument, startRun, subscribeToEvents, getRunResult } from "../lib/api";
+import { uploadDocument, startRun, subscribeToEvents, getRunResult, VisionOpsEventPayload, RunResult } from "../lib/api";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState<string>("Ready");
   const [runId, setRunId] = useState<string | null>(null);
-  const [events, setEvents] = useState<{ type: string; data: any }[]>([]);
-  const [finalResult, setFinalResult] = useState<any | null>(null);
+  const [events, setEvents] = useState<VisionOpsEventPayload[]>([]);
+  const [finalResult, setFinalResult] = useState<RunResult | null>(null);
+
+  // Diagram Viewer Controls
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [viewFitMode, setViewFitMode] = useState<"adaptive" | "fit" | "full">("adaptive");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const resetAllState = () => {
+    setEvents([]);
+    setFinalResult(null);
+    setRunId(null);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
-      setFinalResult(null);
-      setEvents([]);
+      resetAllState();
       setCurrentStep("Document selected");
     }
   };
 
   const handleLoadSample = async () => {
     try {
+      resetAllState();
       setCurrentStep("Loading 9_Profiling.pdf sample...");
       const res = await fetch("/9_Profiling.pdf");
       const blob = await res.blob();
       const sampleFile = new File([blob], "9_Profiling.pdf", { type: "application/pdf" });
       setFile(sampleFile);
-      setFinalResult(null);
-      setEvents([]);
       setCurrentStep("Sample 9_Profiling.pdf loaded");
     } catch (err) {
       console.error("Failed to load sample:", err);
@@ -41,8 +49,7 @@ export default function Home() {
   const handleUpload = async () => {
     if (!file) return;
     setIsProcessing(true);
-    setEvents([]);
-    setFinalResult(null);
+    resetAllState();
     setCurrentStep("Uploading PDF document...");
 
     try {
@@ -54,16 +61,21 @@ export default function Home() {
       const runRes = await startRun(uploadRes.document_id);
       setRunId(runRes.run_id);
       setCurrentStep("Agent analysis initiated");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setIsProcessing(false);
       setCurrentStep("Failed to start analysis");
-      alert(err?.message || "Failed to start analysis");
+      const msg = err instanceof Error ? err.message : "Failed to start analysis";
+      alert(msg);
     }
   };
 
   useEffect(() => {
     if (!runId) return;
+
+    // Guarantee past execution traces are cleared when a new run begins
+    setEvents([]);
+    setFinalResult(null);
 
     let isSubscribed = true;
 
@@ -101,8 +113,8 @@ export default function Home() {
           setIsProcessing(false);
           setCurrentStep(res.status === "completed" ? "Analysis completed" : "Analysis failed");
           clearInterval(pollInterval);
-        } else if (res.concepts && res.concepts.length > 0 && !finalResult?.concepts) {
-          setFinalResult(res);
+        } else if (res.concepts && res.concepts.length > 0) {
+          setFinalResult((prev) => prev || res);
         }
       } catch (err) {
         console.error("Polling error:", err);
@@ -115,6 +127,42 @@ export default function Home() {
       unsubscribe();
     };
   }, [runId]);
+
+  // Event Type Meta Formatting Helper
+  const getEventMeta = (type: string) => {
+    switch (type) {
+      case "run_started":
+        return { label: "Run Started", icon: "🚀", color: "text-blue-400", bg: "bg-blue-950/40 border-blue-800/50" };
+      case "document_ingested":
+        return { label: "Document Ingested", icon: "📄", color: "text-indigo-400", bg: "bg-indigo-950/40 border-indigo-800/50" };
+      case "concept_extraction_started":
+        return { label: "Extracting Concepts (vLLM)", icon: "🔍", color: "text-purple-400", bg: "bg-purple-950/40 border-purple-800/50" };
+      case "concepts_extracted":
+        return { label: "Concepts Extracted", icon: "💡", color: "text-emerald-400", bg: "bg-emerald-950/40 border-emerald-800/50" };
+      case "relationships_extracted":
+        return { label: "Relationships Mapped", icon: "🔗", color: "text-teal-400", bg: "bg-teal-950/40 border-teal-800/50" };
+      case "equations_extracted":
+        return { label: "Equations Extracted", icon: "🧮", color: "text-cyan-400", bg: "bg-cyan-950/40 border-cyan-800/50" };
+      case "system_abstracted":
+        return { label: "System Abstraction Planned", icon: "⚡", color: "text-amber-400", bg: "bg-amber-950/40 border-amber-800/50" };
+      case "diagram_planned":
+        return { label: "Diagram Spec Planned", icon: "📐", color: "text-sky-400", bg: "bg-sky-950/40 border-sky-800/50" };
+      case "diagram_rendered":
+        return { label: "SVG Rendered", icon: "🎨", color: "text-pink-400", bg: "bg-pink-950/40 border-pink-800/50" };
+      case "critique_started":
+        return { label: "Visual Critique Evaluated", icon: "👁️", color: "text-orange-400", bg: "bg-orange-950/40 border-orange-800/50" };
+      case "critique_completed":
+        return { label: "Critique Completed", icon: "📋", color: "text-yellow-400", bg: "bg-yellow-950/40 border-yellow-800/50" };
+      case "refinement_started":
+        return { label: "Refining Diagram Spec", icon: "↻", color: "text-violet-400", bg: "bg-violet-950/40 border-violet-800/50" };
+      case "run_completed":
+        return { label: "Run Completed", icon: "✅", color: "text-emerald-400", bg: "bg-emerald-950/50 border-emerald-700/60" };
+      case "run_failed":
+        return { label: "Run Failed", icon: "❌", color: "text-red-400", bg: "bg-red-950/50 border-red-800/60" };
+      default:
+        return { label: type, icon: "⚙️", color: "text-gray-400", bg: "bg-gray-900 border-gray-750" };
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gray-900 text-gray-100 p-8">
@@ -195,11 +243,22 @@ export default function Home() {
                 <h2 className="text-xl font-semibold text-gray-200">Execution Trace</h2>
                 <p className="text-[11px] text-gray-400">Real-time Agentic Graph Decisions</p>
               </div>
-              {events.length > 0 && (
-                <span className="text-xs bg-purple-900/60 border border-purple-700/60 px-2.5 py-1 rounded-full text-purple-300 font-mono font-medium">
-                  {events.length} events
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {events.length > 0 && (
+                  <>
+                    <span className="text-xs bg-purple-900/60 border border-purple-700/60 px-2.5 py-1 rounded-full text-purple-300 font-mono font-medium">
+                      {events.length} events
+                    </span>
+                    <button
+                      onClick={() => setEvents([])}
+                      title="Clear trace history"
+                      className="text-[11px] px-2 py-1 bg-gray-750 hover:bg-gray-700 text-gray-400 hover:text-gray-200 rounded border border-gray-650 transition"
+                    >
+                      🧹 Clear
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="space-y-3 flex-1 pr-1">
@@ -210,33 +269,14 @@ export default function Home() {
                 </div>
               )}
 
-              {events.map((ev, i) => {
-                const isLast = i === events.length - 1;
-                const getEventMeta = (type: string) => {
-                  switch (type) {
-                    case "run_started": return { icon: "🚀", label: "Run Started", color: "text-blue-400", bg: "border-blue-800/60 bg-blue-950/20" };
-                    case "document_ingested": return { icon: "📄", label: "Document Ingested", color: "text-indigo-400", bg: "border-indigo-800/60 bg-indigo-950/20" };
-                    case "concept_extraction_started": return { icon: "🔍", label: "Extracting Concepts (vLLM)", color: "text-purple-400", bg: "border-purple-800/60 bg-purple-950/20" };
-                    case "concepts_extracted": return { icon: "💡", label: "Concepts Extracted", color: "text-emerald-400", bg: "border-emerald-800/60 bg-emerald-950/20" };
-                    case "relationships_extracted": return { icon: "🔗", label: "Relationships Mapped", color: "text-teal-400", bg: "border-teal-800/60 bg-teal-950/20" };
-                    case "equations_extracted": return { icon: "𝝅", label: "Equations Extracted", color: "text-amber-400", bg: "border-amber-800/60 bg-amber-950/20" };
-                    case "system_abstracted": return { icon: "🧠", label: "System Abstraction Planned", color: "text-cyan-400", bg: "border-cyan-800/60 bg-cyan-950/20" };
-                    case "diagram_planned": return { icon: "📐", label: "Diagram Spec Formulated", color: "text-sky-400", bg: "border-sky-800/60 bg-sky-950/20" };
-                    case "diagram_rendered": return { icon: "🎨", label: "Deterministic SVG Rendered", color: "text-fuchsia-400", bg: "border-fuchsia-800/60 bg-fuchsia-950/20" };
-                    case "critique_started": return { icon: "👁️", label: "Visual Critique In Progress", color: "text-purple-400", bg: "border-purple-800/60 bg-purple-950/20" };
-                    case "critique_completed": return { icon: "✅", label: "Visual Critique Completed", color: "text-emerald-400", bg: "border-emerald-800/60 bg-emerald-950/20" };
-                    case "refinement_started": return { icon: "↻", label: "Refining Diagram Spec", color: "text-orange-400", bg: "border-orange-800/60 bg-orange-950/20" };
-                    case "run_completed": return { icon: "✨", label: "Analysis Completed", color: "text-emerald-400 font-bold", bg: "border-emerald-700 bg-emerald-950/30" };
-                    case "run_failed": return { icon: "❌", label: "Analysis Halted", color: "text-red-400", bg: "border-red-800 bg-red-950/30" };
-                    default: return { icon: "⚡", label: ev.type, color: "text-gray-300", bg: "border-gray-750 bg-gray-900" };
-                  }
-                };
-
+              {events.map((ev, index) => {
                 const meta = getEventMeta(ev.type);
+                const isLast = index === events.length - 1;
+                const d = ev.data as Record<string, unknown>;
 
                 return (
                   <div 
-                    key={i} 
+                    key={index}
                     className={`text-xs p-3.5 rounded-xl border transition-all ${meta.bg} ${isLast && isProcessing ? "ring-1 ring-purple-500/50 shadow-lg shadow-purple-950/50" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
@@ -250,38 +290,38 @@ export default function Home() {
                     </div>
 
                     {/* Formatted Event Details */}
-                    {ev.data && Object.keys(ev.data).length > 0 && (
+                    {d && Object.keys(d).length > 0 && (
                       <div className="mt-2 text-[11px] text-gray-300 bg-black/40 p-2.5 rounded-lg border border-white/5 space-y-1 font-mono">
-                        {ev.data.count !== undefined && (
-                          <div className="text-gray-300"><span className="text-gray-500">Items Identified:</span> {ev.data.count}</div>
+                        {d.count !== undefined && (
+                          <div className="text-gray-300"><span className="text-gray-500">Items Identified:</span> {String(d.count)}</div>
                         )}
-                        {ev.data.pages !== undefined && (
-                          <div className="text-gray-300"><span className="text-gray-500">Rasterized Pages:</span> {ev.data.pages}</div>
+                        {d.pages !== undefined && (
+                          <div className="text-gray-300"><span className="text-gray-500">Rasterized Pages:</span> {String(d.pages)}</div>
                         )}
-                        {ev.data.title && (
-                          <div className="text-purple-300"><span className="text-gray-500">Title:</span> {ev.data.title}</div>
+                        {d.title !== undefined && (
+                          <div className="text-purple-300"><span className="text-gray-500">Title:</span> {String(d.title)}</div>
                         )}
-                        {ev.data.score !== undefined && (
-                          <div className="text-emerald-300"><span className="text-gray-500">Critique Score:</span> {ev.data.score} / 1.0 (Passed: {String(ev.data.passed)})</div>
+                        {d.score !== undefined && (
+                          <div className="text-emerald-300"><span className="text-gray-500">Critique Score:</span> {String(d.score)} / 1.0 (Passed: {String(d.passed)})</div>
                         )}
-                        {ev.data.filename && (
-                          <div className="text-blue-300 truncate"><span className="text-gray-500">Output SVG:</span> {ev.data.filename}</div>
+                        {d.filename !== undefined && (
+                          <div className="text-blue-300 truncate"><span className="text-gray-500">Output SVG:</span> {String(d.filename)}</div>
                         )}
                         {/* Fallback structured display */}
-                        {ev.data.items && ev.data.items.length > 0 && (
+                        {Array.isArray(d.items) && d.items.length > 0 && (
                           <div className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-1">
-                            {ev.data.items.map((item: any, idx: number) => (
+                            {d.items.map((item: Record<string, unknown>, idx: number) => (
                               <span key={idx} className="bg-purple-900/40 text-purple-200 border border-purple-800/50 px-1.5 py-0.5 rounded">
-                                {item.name || item.id}
+                                {String(item.name || item.id)}
                               </span>
                             ))}
                           </div>
                         )}
-                        {ev.data.links && ev.data.links.length > 0 && (
+                        {Array.isArray(d.links) && d.links.length > 0 && (
                           <div className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-1">
-                            {ev.data.links.map((link: any, idx: number) => (
+                            {d.links.map((link: Record<string, unknown>, idx: number) => (
                               <span key={idx} className="bg-teal-900/40 text-teal-200 border border-teal-800/50 px-1.5 py-0.5 rounded">
-                                {link.source} → {link.target}
+                                {String(link.source)} → {String(link.target)}
                               </span>
                             ))}
                           </div>
@@ -292,7 +332,7 @@ export default function Home() {
                 );
               })}
 
-              {!runId && !isProcessing && (
+              {!runId && !isProcessing && events.length === 0 && (
                 <div className="p-8 text-center border border-dashed border-gray-750 rounded-xl space-y-2">
                   <div className="text-2xl">🧠</div>
                   <p className="text-gray-400 text-xs font-medium">Agent Reasoning Stream</p>
@@ -322,45 +362,111 @@ export default function Home() {
             )}
 
             {/* Generated Architecture Diagram */}
-            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 min-h-[350px] shadow-xl flex flex-col">
-              <div className="flex items-center justify-between mb-4 border-b border-gray-750 pb-3">
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl flex flex-col">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-gray-750 pb-3 gap-3">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-200">Real Project Workflow Diagram</h2>
                   <p className="text-[11px] text-gray-400">Contextual Software Engineering Process Pipeline</p>
                 </div>
-                {finalResult?.diagram_spec?.title && (
-                  <span className="text-xs text-purple-300 bg-purple-900/60 border border-purple-700 px-3 py-1 rounded-full font-medium">
-                    {finalResult.diagram_spec.title}
-                  </span>
+
+                {/* Adaptive View Controls Toolbar */}
+                {finalResult?.rendered_diagram && (
+                  <div className="flex items-center gap-2 bg-gray-900 p-1.5 rounded-lg border border-gray-700">
+                    <div className="flex items-center bg-gray-800 rounded border border-gray-700">
+                      <button 
+                        onClick={() => setViewFitMode("adaptive")}
+                        className={`px-2 py-1 text-[11px] font-medium rounded-l ${viewFitMode === "adaptive" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
+                        title="Scrollable Crisp View"
+                      >
+                        ↔️ Crisp Scroll
+                      </button>
+                      <button 
+                        onClick={() => setViewFitMode("fit")}
+                        className={`px-2 py-1 text-[11px] font-medium border-l border-r border-gray-700 ${viewFitMode === "fit" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
+                        title="Fit to Window"
+                      >
+                        🖼️ Fit Window
+                      </button>
+                      <button 
+                        onClick={() => setViewFitMode("full")}
+                        className={`px-2 py-1 text-[11px] font-medium rounded-r ${viewFitMode === "full" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
+                        title="100% Full Width"
+                      >
+                        📐 Full Width
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded border border-gray-700 text-xs font-mono">
+                      <button 
+                        onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
+                        className="text-gray-400 hover:text-white px-1 text-sm font-bold"
+                        title="Zoom Out"
+                      >
+                        -
+                      </button>
+                      <span className="text-purple-300 w-10 text-center text-[11px]">{zoomLevel}%</span>
+                      <button 
+                        onClick={() => setZoomLevel((z) => Math.min(250, z + 25))}
+                        className="text-gray-400 hover:text-white px-1 text-sm font-bold"
+                        title="Zoom In"
+                      >
+                        +
+                      </button>
+                      {zoomLevel !== 100 && (
+                        <button 
+                          onClick={() => setZoomLevel(100)}
+                          className="text-[10px] text-gray-500 hover:text-gray-300 ml-1 underline"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 
-              <div className="flex-1 bg-gray-900 rounded-lg border border-gray-750 flex items-center justify-center p-6 overflow-auto min-h-[280px]">
+              {/* Diagram Rendering Viewport */}
+              <div className="flex-1 bg-gray-950 rounded-xl border border-gray-750 flex items-center justify-center p-4 min-h-[360px] overflow-auto shadow-inner relative">
                 {finalResult?.rendered_diagram ? (
-                  <div className="w-full flex flex-col items-center">
-                    <img 
-                      src={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`}
-                      alt="Real Project Workflow Diagram"
-                      className="max-w-full max-h-[550px] object-contain rounded bg-black/40 p-4 shadow-inner border border-white/5"
-                    />
-                    <div className="mt-3 flex items-center gap-3">
+                  <div className="w-full flex flex-col items-center overflow-auto py-2">
+                    <div 
+                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full"
+                      style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
+                    >
+                      <img 
+                        src={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`}
+                        alt="Real Project Workflow Diagram"
+                        className={`rounded-lg bg-slate-950 p-6 shadow-2xl border border-indigo-900/40 transition-all ${
+                          viewFitMode === "fit" 
+                            ? "max-w-full max-h-[500px] object-contain" 
+                            : viewFitMode === "full"
+                            ? "w-full h-auto object-contain"
+                            : "min-w-[950px] w-auto h-auto object-none"
+                        }`}
+                      />
+                    </div>
+                    <div className="mt-4 flex items-center gap-4">
                       <a 
                         href={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 font-medium"
+                        className="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 font-medium bg-blue-950/40 px-3 py-1.5 rounded-full border border-blue-800/50"
                       >
-                        <span>Open high-res SVG in new tab</span> ↗
+                        <span>Open Raw High-Res SVG in New Tab</span> ↗
                       </a>
                     </div>
                   </div>
                 ) : isProcessing ? (
-                  <div className="text-center space-y-2">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
-                    <p className="text-xs text-gray-400">Constructing real-world software process workflow...</p>
+                  <div className="text-center space-y-3 py-12">
+                    <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-purple-400"></div>
+                    <p className="text-xs text-gray-300 font-medium">Synthesizing real-world software process workflow...</p>
                   </div>
                 ) : (
-                  <p className="text-gray-600 text-sm">No diagram generated yet</p>
+                  <div className="text-center py-16 text-gray-500 space-y-2">
+                    <div className="text-3xl">📐</div>
+                    <p className="text-sm">No diagram generated yet</p>
+                    <p className="text-xs text-gray-600">Upload a PDF or click &apos;Use Sample&apos; to generate a process pipeline.</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -375,7 +481,7 @@ export default function Home() {
                   <span className="text-[11px] text-gray-400">Hover for practical role</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {finalResult.concepts.map((c: any) => (
+                  {finalResult.concepts.map((c: { id: string; name: string; description: string; role?: string }) => (
                     <span 
                       key={c.id} 
                       className="px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-xs text-gray-200 shadow-sm"

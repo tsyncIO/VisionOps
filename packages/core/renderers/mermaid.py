@@ -55,7 +55,7 @@ class MermaidRenderer(DiagramRenderer):
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
         """Convert DiagramSpec to Mermaid syntax with modern styling."""
         lines = [
-            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'primaryColor': '#312e81', 'primaryTextColor': '#f3f4f6', 'primaryBorderColor': '#6366f1', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'fontSize': '15px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#6366f1', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
         ]
         
         if diagram.layout == "sequence":
@@ -64,7 +64,7 @@ class MermaidRenderer(DiagramRenderer):
             
             # Add nodes as participants
             for node in diagram.nodes:
-                escaped_label = node.label.replace('"', '\\"')
+                escaped_label = node.label.replace('"', '\\"').replace(" (", "<br/>(").replace(" [", "<br/>[")
                 lines.append(f'    participant {node.id} as {escaped_label}')
                 
             # Add edges as messages
@@ -79,7 +79,7 @@ class MermaidRenderer(DiagramRenderer):
             
             # Nodes
             for node in diagram.nodes:
-                escaped_label = node.label.replace('"', '#quot;')
+                escaped_label = node.label.replace('"', '#quot;').replace(" (", "<br/>(").replace(" [", "<br/>[")
                 if node.type in ("input", "output"):
                     shape_start, shape_end = ("([", "])")
                 elif node.type == "process":
