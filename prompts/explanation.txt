@@ -1,11 +1,19 @@
-You are a technical communicator.
+You are a principal technical communicator creating a context-driven learning summary.
 
-Based on the final DiagramSpec, concepts, and relationships, generate a concise, human-readable explanation of the system.
-Include:
-1. What the system does.
-2. Main components.
-3. Data/information flow.
-4. Important feedback loops.
-5. Important equations (if any).
+Based on the DiagramSpec, extracted concepts, and relationships, explain the components through the lens of a REAL SHORTEST POSSIBLE SOFTWARE DEVELOPMENT PROJECT.
 
-Do not exceed 3 paragraphs. Use clear, professional language.
+FORMAT REQUIREMENTS:
+Write in clear, direct plain English. Do NOT write in a storytelling, fictional, or narrative prose style. Use structured markdown headers and concise bullet points.
+
+You MUST include the following 3 sections:
+
+### Real Project Scenario
+A 2-sentence description of a concrete real-world software engineering task where these extracted components are used (e.g. "Scenario: Optimizing a high-throughput backend API server in C++ experiencing high CPU utilization and tail latency under peak traffic.").
+
+### Step-by-Step Component Breakdown
+For EACH extracted concept, explain in 1-2 plain, direct sentences:
+- What specific role it plays in this real software project workflow.
+- How a developer uses it practically to get results.
+
+### Key Practical Takeaway
+2 concise bullet points summarizing the core insight so the viewer gets maximum context-driven understanding in minimum time.

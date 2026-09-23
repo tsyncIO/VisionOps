@@ -323,38 +323,41 @@ export default function Home() {
 
             {/* Generated Architecture Diagram */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 min-h-[350px] shadow-xl flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-200">Generated System Diagram</h2>
+              <div className="flex items-center justify-between mb-4 border-b border-gray-750 pb-3">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-200">Real Project Workflow Diagram</h2>
+                  <p className="text-[11px] text-gray-400">Contextual Software Engineering Process Pipeline</p>
+                </div>
                 {finalResult?.diagram_spec?.title && (
-                  <span className="text-xs text-purple-300 bg-purple-900/40 border border-purple-800 px-2 py-1 rounded">
+                  <span className="text-xs text-purple-300 bg-purple-900/60 border border-purple-700 px-3 py-1 rounded-full font-medium">
                     {finalResult.diagram_spec.title}
                   </span>
                 )}
               </div>
 
-              <div className="flex-1 bg-gray-900 rounded-lg border border-gray-750 flex items-center justify-center p-6 overflow-auto min-h-[250px]">
+              <div className="flex-1 bg-gray-900 rounded-lg border border-gray-750 flex items-center justify-center p-6 overflow-auto min-h-[280px]">
                 {finalResult?.rendered_diagram ? (
                   <div className="w-full flex flex-col items-center">
                     <img 
                       src={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`}
-                      alt="Generated Architecture Diagram"
-                      className="max-w-full max-h-[550px] object-contain rounded bg-white/5 p-4 shadow-inner"
+                      alt="Real Project Workflow Diagram"
+                      className="max-w-full max-h-[550px] object-contain rounded bg-black/40 p-4 shadow-inner border border-white/5"
                     />
                     <div className="mt-3 flex items-center gap-3">
                       <a 
                         href={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="text-xs text-blue-400 hover:underline"
+                        className="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 font-medium"
                       >
-                        Open SVG in new tab ↗
+                        <span>Open high-res SVG in new tab</span> ↗
                       </a>
                     </div>
                   </div>
                 ) : isProcessing ? (
                   <div className="text-center space-y-2">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
-                    <p className="text-xs text-gray-400">Generating structured system representation...</p>
+                    <p className="text-xs text-gray-400">Constructing real-world software process workflow...</p>
                   </div>
                 ) : (
                   <p className="text-gray-600 text-sm">No diagram generated yet</p>
@@ -365,18 +368,21 @@ export default function Home() {
             {/* Extracted Concepts Summary */}
             {finalResult?.concepts && finalResult.concepts.length > 0 && (
               <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
-                  Extracted Concepts ({finalResult.concepts.length})
-                </h3>
+                <div className="flex items-center justify-between border-b border-gray-750 pb-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
+                    Project Components ({finalResult.concepts.length})
+                  </h3>
+                  <span className="text-[11px] text-gray-400">Hover for practical role</span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {finalResult.concepts.map((c: any) => (
                     <span 
                       key={c.id} 
-                      className="px-2.5 py-1 bg-gray-900 border border-gray-700 rounded-md text-xs text-gray-300"
+                      className="px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-xs text-gray-200 shadow-sm"
                       title={c.description}
                     >
                       <strong className="text-purple-400">{c.name}</strong>
-                      {c.role && <span className="text-gray-500 text-[10px] ml-1.5">({c.role})</span>}
+                      {c.role && <span className="text-gray-500 text-[10px] ml-1.5 font-mono">({c.role})</span>}
                     </span>
                   ))}
                 </div>
@@ -385,9 +391,17 @@ export default function Home() {
 
             {/* System Explanation */}
             {finalResult?.explanation && (
-              <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl">
-                <h2 className="text-xl font-semibold mb-3 text-gray-200">System Explanation</h2>
-                <div className="prose prose-invert max-w-none text-sm text-gray-300 leading-relaxed whitespace-pre-line bg-gray-900 p-4 rounded-lg border border-gray-750">
+              <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-750 pb-3">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-200">Real Project Context Breakdown</h2>
+                    <p className="text-[11px] text-gray-400">Plain English • Practical Dev Process • Maximum Learning Gain</p>
+                  </div>
+                  <span className="text-xs bg-emerald-950 border border-emerald-800 text-emerald-300 px-2.5 py-1 rounded-full font-medium">
+                    Plain English
+                  </span>
+                </div>
+                <div className="prose prose-invert max-w-none text-sm text-gray-200 leading-relaxed whitespace-pre-line bg-gray-900 p-5 rounded-xl border border-gray-750 shadow-inner font-sans">
                   {finalResult.explanation}
                 </div>
               </div>

@@ -1,9 +1,12 @@
-You are a technical analyst abstracting a system for diagram generation.
+You are an expert system architect establishing a practical abstraction strategy.
 
-You are given a list of concepts and their relationships extracted from a technical document.
-Your task is to determine which concepts and relationships should be included in a high-level system diagram.
+You are given a list of extracted concepts and their relationships from a technical document.
+Your goal is to formulate a strategy that translates these concepts into a CONCRETE REAL-WORLD PROJECT WORKFLOW (e.g., a real software engineering process or real-world system execution pipeline).
 
-Omit minor details, intermediate variables, or low-level implementation specifics that would clutter a high-level architectural diagram.
-Retain the most structurally important components and their primary flows.
+Key Directives:
+1. Do NOT create a flat academic taxonomy or hub-and-spoke star structure.
+2. Formulate a sequential, step-by-step workflow showing how these mini-components operate together in a real practical project.
+3. Identify the logical entry point (e.g. Input/Target), the intermediate processing & measurement steps, and the final output/optimization outcome.
+4. Select the core concepts that participate directly in this real-world process.
 
-Produce a plan for the diagram.
+Produce a concise abstraction strategy explaining how the document's concepts map to a real software development or system workflow.

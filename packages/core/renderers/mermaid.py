@@ -53,12 +53,14 @@ class MermaidRenderer(DiagramRenderer):
             Path(temp_mmd_path).unlink(missing_ok=True)
 
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
-        """Convert DiagramSpec to Mermaid syntax."""
-        lines = []
+        """Convert DiagramSpec to Mermaid syntax with modern styling."""
+        lines = [
+            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'primaryColor': '#312e81', 'primaryTextColor': '#f3f4f6', 'primaryBorderColor': '#6366f1', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+        ]
         
         if diagram.layout == "sequence":
             lines.append("sequenceDiagram")
-            lines.append(f"    autonumber")
+            lines.append("    autonumber")
             
             # Add nodes as participants
             for node in diagram.nodes:
@@ -71,30 +73,26 @@ class MermaidRenderer(DiagramRenderer):
                 arrow = "->>" if edge.direction == "forward" else "-->>"
                 lines.append(f'    {edge.source}{arrow}{edge.target}: {label}')
         else:
-            # Default to flowchart
-            lines.append("graph TD")
+            # Flowchart in Left-to-Right layout for process workflows
+            direction = "TD" if diagram.layout == "flowchart_td" else "LR"
+            lines.append(f"graph {direction}")
             
             # Nodes
             for node in diagram.nodes:
-                # Flowchart supports different shapes based on type, but for simplicity
-                # we'll use rounded rectangles for everything or specific ones if requested.
                 escaped_label = node.label.replace('"', '#quot;')
-                shape_start, shape_end = ("(", ")") if node.type == "process" else ("[", "]")
+                if node.type in ("input", "output"):
+                    shape_start, shape_end = ("([", "])")
+                elif node.type == "process":
+                    shape_start, shape_end = ("[", "]")
+                else:
+                    shape_start, shape_end = ("([", "])")
+                    
                 lines.append(f'    {node.id}{shape_start}"{escaped_label}"{shape_end}')
                 
             # Edges
             for edge in diagram.edges:
                 label = edge.label
-                
-                if edge.direction == "bidirectional":
-                    arrow = "<-->"
-                elif edge.direction == "backward":
-                    # While mermaid doesn't strictly have a "backward" arrow that flips the node order, 
-                    # we can represent it as a directed edge.
-                    # Usually better to just swap source/target if backward, but mermaid supports it.
-                    arrow = "-->" 
-                else:
-                    arrow = "-->"
+                arrow = "<-->" if edge.direction == "bidirectional" else "-->"
                     
                 if label:
                     escaped_edge_label = label.replace('"', '#quot;')
