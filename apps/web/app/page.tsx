@@ -13,7 +13,7 @@ export default function Home() {
   const [svgXml, setSvgXml] = useState<string>("");
 
   // Diagram Viewer Controls
-  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [zoomLevel, setZoomLevel] = useState<number>(125);
   const [viewFitMode, setViewFitMode] = useState<"adaptive" | "fit" | "full">("full");
 
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -52,18 +52,56 @@ class MermaidRenderer(DiagramRenderer):
             if not output_path.exists():
                 raise RendererError("mmdc completed but output file not found")
 
-            # Post-process SVG for 100% full-panel responsive display
+            # Post-process SVG for 100% full-panel responsive display with enlarged text & blocks
             try:
                 import re
                 svg_content = output_path.read_text(encoding="utf-8")
+                
                 # Replace fixed width/height with 100% responsive bounds
                 svg_content = re.sub(r'width="[0-9.]+(px)?"', 'width="100%"', svg_content, count=1)
                 svg_content = re.sub(r'height="[0-9.]+(px)?"', 'height="100%"', svg_content, count=1)
                 svg_content = re.sub(r'style="[^"]*max-width:[^"]*"', 'style="width: 100%; height: 100%; max-width: 100%;"', svg_content)
+                
                 if 'preserveAspectRatio' not in svg_content:
-                    svg_content = re.sub(r'<svg ', '<svg preserveAspectRatio="none" ', svg_content, count=1)
-                else:
-                    svg_content = re.sub(r'preserveAspectRatio="[^"]*"', 'preserveAspectRatio="none"', svg_content)
+                    svg_content = re.sub(r'<svg ', '<svg preserveAspectRatio="xMidYMid meet" ', svg_content, count=1)
+
+                # Inject high-impact CSS for huge text, thick lines, and bold block cards
+                high_impact_css = """
+/* VisionOps High-Impact Custom Diagram Styles */
+.node rect, .node polygon, .node path, .node circle {
+    stroke-width: 3px !important;
+    fill: #1e1b4b !important;
+    stroke: #818cf8 !important;
+    rx: 10px !important;
+    ry: 10px !important;
+}
+.nodeLabel, .node .label, .node span, .node div, foreignObject div {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    line-height: 1.4 !important;
+}
+.edgeLabel, .edgeLabel span, .edgeLabel div {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #38bdf8 !important;
+    fill: #38bdf8 !important;
+    background-color: #0f172a !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+}
+.edgePath .path {
+    stroke-width: 3.5px !important;
+    stroke: #38bdf8 !important;
+}
+foreignObject {
+    overflow: visible !important;
+}
+"""
+                if '</style>' in svg_content:
+                    svg_content = svg_content.replace('</style>', high_impact_css + '</style>')
+
                 output_path.write_text(svg_content, encoding="utf-8")
             except Exception as e:
                 logger.warning(f"SVG post-processing warning: {e}")
@@ -75,9 +113,9 @@ class MermaidRenderer(DiagramRenderer):
             Path(temp_cfg_path).unlink(missing_ok=True)
 
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
-        """Convert DiagramSpec to Mermaid syntax with modern styling."""
+        """Convert DiagramSpec to Mermaid syntax with modern high-impact styling."""
         lines = [
-            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'fontSize': '22px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+            "%%{init: { 'theme': 'dark', 'flowchart': { 'nodeSpacing': 50, 'rankSpacing': 60, 'padding': 25, 'useMaxWidth': false }, 'themeVariables': { 'darkMode': true, 'fontSize': '28px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
         ]
         
         if diagram.layout == "sequence":
