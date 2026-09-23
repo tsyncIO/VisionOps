@@ -10,6 +10,7 @@ export default function Home() {
   const [runId, setRunId] = useState<string | null>(null);
   const [events, setEvents] = useState<VisionOpsEventPayload[]>([]);
   const [finalResult, setFinalResult] = useState<RunResult | null>(null);
+  const [svgXml, setSvgXml] = useState<string>("");
 
   // Diagram Viewer Controls
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -17,9 +18,22 @@ export default function Home() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (finalResult?.rendered_diagram) {
+      const filename = finalResult.rendered_diagram.split('/').pop();
+      fetch(`http://localhost:8001/outputs/${filename}`)
+        .then((res) => res.text())
+        .then((text) => setSvgXml(text))
+        .catch(() => setSvgXml(""));
+    } else {
+      setSvgXml("");
+    }
+  }, [finalResult?.rendered_diagram]);
+
   const resetAllState = () => {
     setEvents([]);
     setFinalResult(null);
+    setSvgXml("");
     setRunId(null);
   };
 
@@ -426,25 +440,14 @@ export default function Home() {
               </div>
 
               {/* Diagram Rendering Viewport */}
-              <div className="flex-1 bg-gray-950 rounded-xl border border-gray-750 flex items-center justify-center p-6 min-h-[500px] overflow-auto shadow-inner relative">
+              <div className="flex-1 bg-gray-950 rounded-xl border border-gray-750 flex items-center justify-center p-4 min-h-[520px] overflow-auto shadow-inner relative">
                 {finalResult?.rendered_diagram ? (
-                  <div className="w-full flex flex-col items-center overflow-auto py-2">
+                  <div className="w-full h-full flex flex-col items-center justify-center py-2 min-h-[480px]">
                     <div 
-                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full"
+                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full h-full min-h-[440px] rounded-xl bg-slate-950 p-4 shadow-2xl border border-indigo-900/50 [&>svg]:w-full [&>svg]:h-full [&>svg]:min-h-[420px] [&>svg]:max-h-[600px] [&>svg]:block"
                       style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
-                    >
-                      <img 
-                        src={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`}
-                        alt="Real Project Workflow Diagram"
-                        className={`rounded-xl bg-slate-950 p-6 shadow-2xl border border-indigo-900/50 transition-all ${
-                          viewFitMode === "fit" 
-                            ? "max-w-full max-h-[600px] object-contain" 
-                            : viewFitMode === "full"
-                            ? "w-full h-auto object-contain"
-                            : "w-full max-w-3xl min-h-[480px] h-auto object-contain"
-                        }`}
-                      />
-                    </div>
+                      dangerouslySetInnerHTML={{ __html: svgXml || `<img src="http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}" class="w-full h-full object-contain" />` }}
+                    />
                     <div className="mt-4 flex items-center gap-4">
                       <a 
                         href={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`} 

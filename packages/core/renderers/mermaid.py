@@ -28,14 +28,19 @@ class MermaidRenderer(DiagramRenderer):
         # 3. Render using mmdc
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with tempfile.NamedTemporaryFile(suffix=".mmd", mode="w", delete=False) as f:
-            f.write(mermaid_src)
-            temp_mmd_path = f.name
+        with tempfile.NamedTemporaryFile(suffix=".mmd", mode="w", delete=False) as f_mmd, \
+             tempfile.NamedTemporaryFile(suffix=".json", mode="w", delete=False) as f_cfg:
+            f_mmd.write(mermaid_src)
+            temp_mmd_path = f_mmd.name
+            
+            import json
+            json.dump({"args": ["--no-sandbox", "--disable-setuid-sandbox"]}, f_cfg)
+            temp_cfg_path = f_cfg.name
             
         try:
-            # We use npx to run the locally installed mermaid-cli
+            # We use npx to run the locally installed mermaid-cli with puppeteer sandbox options
             result = subprocess.run(
-                ["npx", "mmdc", "-i", temp_mmd_path, "-o", str(output_path), "-b", "transparent"],
+                ["npx", "mmdc", "-p", temp_cfg_path, "-i", temp_mmd_path, "-o", str(output_path), "-b", "transparent"],
                 capture_output=True,
                 text=True,
                 check=False
@@ -47,7 +52,7 @@ class MermaidRenderer(DiagramRenderer):
             if not output_path.exists():
                 raise RendererError("mmdc completed but output file not found")
 
-            # Post-process SVG for full-scale responsive display
+            # Post-process SVG for 100% full-panel responsive display
             try:
                 import re
                 svg_content = output_path.read_text(encoding="utf-8")
@@ -55,6 +60,10 @@ class MermaidRenderer(DiagramRenderer):
                 svg_content = re.sub(r'width="[0-9.]+(px)?"', 'width="100%"', svg_content, count=1)
                 svg_content = re.sub(r'height="[0-9.]+(px)?"', 'height="100%"', svg_content, count=1)
                 svg_content = re.sub(r'style="[^"]*max-width:[^"]*"', 'style="width: 100%; height: 100%; max-width: 100%;"', svg_content)
+                if 'preserveAspectRatio' not in svg_content:
+                    svg_content = re.sub(r'<svg ', '<svg preserveAspectRatio="none" ', svg_content, count=1)
+                else:
+                    svg_content = re.sub(r'preserveAspectRatio="[^"]*"', 'preserveAspectRatio="none"', svg_content)
                 output_path.write_text(svg_content, encoding="utf-8")
             except Exception as e:
                 logger.warning(f"SVG post-processing warning: {e}")
@@ -63,11 +72,12 @@ class MermaidRenderer(DiagramRenderer):
             
         finally:
             Path(temp_mmd_path).unlink(missing_ok=True)
+            Path(temp_cfg_path).unlink(missing_ok=True)
 
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
         """Convert DiagramSpec to Mermaid syntax with modern styling."""
         lines = [
-            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'fontSize': '18px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'fontSize': '22px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
         ]
         
         if diagram.layout == "sequence":
@@ -85,9 +95,8 @@ class MermaidRenderer(DiagramRenderer):
                 arrow = "->>" if edge.direction == "forward" else "-->>"
                 lines.append(f'    {edge.source}{arrow}{edge.target}: {label}')
         else:
-            # Default to Top-Down (TD) for readable vertical process flowcharts
-            direction = "LR" if diagram.layout == "flowchart_lr" else "TD"
-            lines.append(f"graph {direction}")
+            # Force Top-Down (TD) layout for all flowcharts so process steps stack vertically and fit the screen panel
+            lines.append("graph TD")
             
             # Nodes
             for node in diagram.nodes:
