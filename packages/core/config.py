@@ -22,7 +22,7 @@ class VisionOpsSettings(BaseSettings):
     vllm_base_url: str = "http://localhost:8000/v1"
     vision_model: str = "Qwen/Qwen2.5-VL-7B-Instruct"
     model_timeout: int = 120
-    model_max_tokens: int = 4096
+    model_max_tokens: int = 1500
 
     # Agent Configuration
     max_refinement_iterations: int = 2

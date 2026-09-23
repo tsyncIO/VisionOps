@@ -148,7 +148,7 @@ class OpenAICompatibleVisionModelClient(VisionModelClient):
         base_url: str = "http://localhost:8000/v1",
         model: str = "Qwen/Qwen2.5-VL-7B-Instruct",
         timeout: float = 120.0,
-        max_tokens: int = 4096,
+        max_tokens: int = 1500,
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model

@@ -231,8 +231,6 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
         try:
             # Pass original page AND rendered diagram if available
             images = [state.page_images[0]]
-            if state.rendered_diagram:
-                images.append(state.rendered_diagram)
                 
             critique = await deps.client.analyze_multimodal(
                 images=images,
