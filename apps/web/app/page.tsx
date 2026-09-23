@@ -121,7 +121,7 @@ export default function Home() {
                   ))}
                 </ul>
                 <p className="mt-4 text-sm text-red-400/80">
-                  Note: If the model server connection failed, ensure vLLM is running locally or switch to a Mock client for testing.
+                  Note: Ensure the vLLM model server is running locally on port 8000.
                 </p>
               </div>
             )}
@@ -129,17 +129,16 @@ export default function Home() {
             {/* SVG Viewer */}
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 min-h-[300px] shadow-xl flex flex-col">
               <h2 className="text-xl font-semibold mb-4 text-gray-200">Generated Diagram</h2>
-              <div className="flex-1 bg-gray-900 rounded-lg border border-gray-750 flex items-center justify-center p-4">
+              <div className="flex-1 bg-gray-900 rounded-lg border border-gray-750 flex items-center justify-center p-4 overflow-auto">
                 {finalResult?.rendered_diagram ? (
-                   // Typically we would host the SVGs as static files or have an API endpoint to fetch them.
-                   // For MVP, we can instruct the user or provide a link to it, or render inline if we add an endpoint.
-                   <div className="text-center">
-                     <p className="text-green-400 mb-2">Diagram rendered successfully!</p>
-                     <p className="text-xs text-gray-500">{finalResult.rendered_diagram}</p>
-                     <p className="text-sm mt-4 text-gray-400">
-                       (Add a static file route in FastAPI to view the SVG here)
-                     </p>
-                   </div>
+                  <div className="w-full flex flex-col items-center">
+                    <img 
+                      src={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`}
+                      alt="Generated Architecture Diagram"
+                      className="max-w-full max-h-[500px] object-contain rounded bg-white/5 p-4"
+                    />
+                    <p className="text-xs text-gray-400 mt-2">{finalResult.rendered_diagram.split('/').pop()}</p>
+                  </div>
                 ) : (
                   <p className="text-gray-600">Waiting for agent...</p>
                 )}

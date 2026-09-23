@@ -71,28 +71,12 @@ async def start_run(
     _runs[run_id] = state
     
     # Initialize dependencies
-    from packages.core.clients.mock_client import MockVisionModelClient
-
-    if settings.vision_model.lower() == "mock":
-        logger.info("Using MockVisionModelClient for testing")
-        client = MockVisionModelClient(
-            response_map={
-                "extracting concepts": '{"concepts": [{"id": "sys", "name": "System", "description": "Core system", "role": "processing", "importance": 1.0, "equations": []}]}',
-                "extracting relationships": '{"relationships": []}',
-                "extracting mathematical equations": '{"equations": []}',
-                "abstracting a system": '{"strategy": "keep all", "selected_concept_ids": ["sys"], "selected_relationship_indices": []}',
-                "planning a visual diagram": '{"title": "Mock System", "nodes": [{"id": "sys", "label": "System", "description": "Core system", "type": "component"}], "edges": [], "layout": "flowchart"}',
-                "evaluating a generated system diagram": '{"passed": true, "score": 1.0, "missing_concepts": [], "incorrect_relationships": [], "incorrect_direction": [], "missing_equations": [], "visual_issues": [], "complexity_issues": [], "suggested_changes": []}',
-                "technical communicator": '{"explanation": "This is a mocked execution because vLLM is not running."}'
-            }
-        )
-    else:
-        client = OpenAICompatibleVisionModelClient(
-            base_url=settings.vllm_base_url,
-            model=settings.vision_model,
-            timeout=settings.model_timeout,
-            max_tokens=settings.model_max_tokens,
-        )
+    client = OpenAICompatibleVisionModelClient(
+        base_url=settings.vllm_base_url,
+        model=settings.vision_model,
+        timeout=settings.model_timeout,
+        max_tokens=settings.model_max_tokens,
+    )
     renderer = MermaidRenderer()
     processor = DocumentProcessor(settings)
     
