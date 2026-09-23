@@ -65,38 +65,44 @@ class MermaidRenderer(DiagramRenderer):
                 if 'preserveAspectRatio' not in svg_content:
                     svg_content = re.sub(r'<svg ', '<svg preserveAspectRatio="xMidYMid meet" ', svg_content, count=1)
 
-                # Inject high-impact CSS for huge text, thick lines, and bold block cards
+                # Inject high-impact CSS for massive block cards, huge 36px text, and 5px thick lines
                 high_impact_css = """
 /* VisionOps High-Impact Custom Diagram Styles */
 .node rect, .node polygon, .node path, .node circle {
-    stroke-width: 3px !important;
+    stroke-width: 4px !important;
     fill: #1e1b4b !important;
     stroke: #818cf8 !important;
-    rx: 10px !important;
-    ry: 10px !important;
+    rx: 16px !important;
+    ry: 16px !important;
+    filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.6)) !important;
+}
+.node foreignObject {
+    min-width: 320px !important;
+    min-height: 90px !important;
+    overflow: visible !important;
 }
 .nodeLabel, .node .label, .node span, .node div, foreignObject div {
-    font-size: 28px !important;
-    font-weight: 800 !important;
+    font-size: 34px !important;
+    font-weight: 900 !important;
     color: #ffffff !important;
     fill: #ffffff !important;
     line-height: 1.4 !important;
+    padding: 16px 24px !important;
+    text-align: center !important;
 }
 .edgeLabel, .edgeLabel span, .edgeLabel div {
-    font-size: 22px !important;
-    font-weight: 700 !important;
+    font-size: 26px !important;
+    font-weight: 800 !important;
     color: #38bdf8 !important;
     fill: #38bdf8 !important;
     background-color: #0f172a !important;
-    padding: 4px 10px !important;
-    border-radius: 6px !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
 }
 .edgePath .path {
-    stroke-width: 3.5px !important;
+    stroke-width: 4.5px !important;
     stroke: #38bdf8 !important;
-}
-foreignObject {
-    overflow: visible !important;
 }
 """
                 if '</style>' in svg_content:
@@ -115,7 +121,7 @@ foreignObject {
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
         """Convert DiagramSpec to Mermaid syntax with modern high-impact styling."""
         lines = [
-            "%%{init: { 'theme': 'dark', 'flowchart': { 'nodeSpacing': 50, 'rankSpacing': 60, 'padding': 25, 'useMaxWidth': false }, 'themeVariables': { 'darkMode': true, 'fontSize': '28px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+            "%%{init: { 'theme': 'dark', 'flowchart': { 'nodeSpacing': 80, 'rankSpacing': 100, 'padding': 40, 'useMaxWidth': false }, 'themeVariables': { 'darkMode': true, 'fontSize': '36px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
         ]
         
         if diagram.layout == "sequence":
