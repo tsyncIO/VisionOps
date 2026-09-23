@@ -52,13 +52,20 @@ class EventStreamer:
     
     def __init__(self):
         self._queues: Dict[str, Set[asyncio.Queue[VisionOpsEvent]]] = {}
+        self._history: Dict[str, list[VisionOpsEvent]] = {}
         
     def subscribe(self, run_id: str) -> asyncio.Queue[VisionOpsEvent]:
         """Subscribe to events for a specific run."""
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[VisionOpsEvent] = asyncio.Queue()
         if run_id not in self._queues:
             self._queues[run_id] = set()
         self._queues[run_id].add(queue)
+
+        # Replay past events so the subscriber never misses early events
+        if run_id in self._history:
+            for past_event in self._history[run_id]:
+                queue.put_nowait(past_event)
+
         return queue
         
     def unsubscribe(self, run_id: str, queue: asyncio.Queue[VisionOpsEvent]) -> None:
@@ -78,7 +85,12 @@ class EventStreamer:
             event=event_type,
             data=data
         )
+
+        if run_id not in self._history:
+            self._history[run_id] = []
+        self._history[run_id].append(event)
         
         if run_id in self._queues:
             for queue in self._queues[run_id]:
                 await queue.put(event)
+

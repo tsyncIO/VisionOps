@@ -9,11 +9,12 @@ from packages.core.config import VisionOpsSettings
 
 class TestSettings:
     def test_defaults(self):
-        settings = VisionOpsSettings()
+        settings = VisionOpsSettings(_env_file=None)
         assert settings.visionops_env == "development"
         assert settings.api_port == 8001
         assert settings.max_refinement_iterations == 2
         assert settings.vision_model == "Qwen/Qwen2.5-VL-7B-Instruct"
+
 
     def test_max_upload_size_bytes(self):
         settings = VisionOpsSettings()

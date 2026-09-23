@@ -95,8 +95,13 @@ async def start_run(
         try:
             logger.info(f"Starting graph for run {run_id}")
             final_state = await graph.ainvoke(state)
-            _runs[run_id] = VisionOpsState(**final_state)
-            logger.info(f"Run {run_id} completed with status: {_runs[run_id].status}")
+            state_obj = VisionOpsState(**final_state)
+            _runs[run_id] = state_obj
+            logger.info(f"Run {run_id} completed with status: {state_obj.status}")
+            if state_obj.status == "failed":
+                await streamer.emit(run_id, "run_failed", {"errors": state_obj.errors})
+            elif state_obj.status == "completed":
+                await streamer.emit(run_id, "run_completed", {"status": "completed"})
         except Exception as e:
             logger.error(f"Run {run_id} failed: {e}")
             _runs[run_id].status = "failed"
@@ -136,9 +141,12 @@ async def stream_events(
                     break
                 event = await queue.get()
                 yield event.to_sse()
+                if event.event in ("run_completed", "run_failed"):
+                    break
         except asyncio.CancelledError:
             pass
         finally:
             streamer.unsubscribe(run_id, queue)
             
     return EventSourceResponse(event_generator())
+
