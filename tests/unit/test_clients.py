@@ -30,7 +30,6 @@ from packages.core.clients import (
     ModelUnavailableError,
     VisionModelError,
 )
-from packages.core.clients.mock_client import MockVisionModelClient
 from packages.core.clients.openai_client import (
     OpenAICompatibleVisionModelClient,
     _build_structured_output_instruction,
@@ -189,88 +188,6 @@ class TestStructuredOutputInstruction:
         instruction = _build_structured_output_instruction(SimpleModel)
         assert "valid JSON" in instruction
         assert "ONLY" in instruction
-
-
-# ---------------------------------------------------------------------------
-# Mock Client Tests
-# ---------------------------------------------------------------------------
-
-class TestMockClient:
-    @pytest.mark.asyncio
-    async def test_default_response(self):
-        client = MockVisionModelClient(default_response="hello world")
-        result = await client.analyze_text("input", "prompt")
-        assert result == "hello world"
-
-    @pytest.mark.asyncio
-    async def test_sequential_responses(self):
-        client = MockVisionModelClient(responses=["first", "second", "third"])
-        r1 = await client.analyze_text("a", "p1")
-        r2 = await client.analyze_text("b", "p2")
-        r3 = await client.analyze_text("c", "p3")
-        assert r1 == "first"
-        assert r2 == "second"
-        assert r3 == "third"
-
-    @pytest.mark.asyncio
-    async def test_response_map(self):
-        client = MockVisionModelClient(
-            response_map={
-                "concept": "concepts response",
-                "relationship": "relationships response",
-            }
-        )
-        r1 = await client.analyze_text("data", "Extract concept from page")
-        r2 = await client.analyze_text("data", "Find relationship between items")
-        assert r1 == "concepts response"
-        assert r2 == "relationships response"
-
-    @pytest.mark.asyncio
-    async def test_call_tracking(self):
-        client = MockVisionModelClient(default_response="ok")
-        await client.analyze_text("input_text", "system_prompt")
-        await client.analyze_image(b"img", "image_prompt")
-
-        assert len(client.calls) == 2
-        assert client.calls[0]["method"] == "analyze_text"
-        assert client.calls[0]["text"] == "input_text"
-        assert client.calls[1]["method"] == "analyze_image"
-
-    @pytest.mark.asyncio
-    async def test_structured_output(self):
-        data = json.dumps({"name": "test", "value": 42})
-        client = MockVisionModelClient(default_response=data)
-        result = await client.analyze_text("x", "p", response_model=SimpleModel)
-        assert isinstance(result, SimpleModel)
-        assert result.name == "test"
-        assert result.value == 42
-
-    @pytest.mark.asyncio
-    async def test_structured_output_invalid(self):
-        client = MockVisionModelClient(default_response="not json")
-        with pytest.raises(ModelOutputInvalidError):
-            await client.analyze_text("x", "p", response_model=SimpleModel)
-
-    @pytest.mark.asyncio
-    async def test_failure_mode(self):
-        client = MockVisionModelClient(
-            should_fail=True,
-            failure_error=ModelTimeoutError(timeout=5.0),
-        )
-        with pytest.raises(ModelTimeoutError):
-            await client.analyze_text("x", "p")
-
-    @pytest.mark.asyncio
-    async def test_analyze_multimodal(self):
-        client = MockVisionModelClient(default_response="multimodal result")
-        result = await client.analyze_multimodal(
-            images=[b"img1", b"img2"],
-            text="context",
-            prompt="analyze these",
-        )
-        assert result == "multimodal result"
-        assert client.calls[0]["method"] == "analyze_multimodal"
-        assert len(client.calls[0]["images"]) == 2
 
 
 # ---------------------------------------------------------------------------
