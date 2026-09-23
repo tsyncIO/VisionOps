@@ -140,7 +140,10 @@ async def stream_events(
                 if await request.is_disconnected():
                     break
                 event = await queue.get()
-                yield event.to_sse()
+                yield {
+                    "event": event.event,
+                    "data": event.model_dump_json(),
+                }
                 if event.event in ("run_completed", "run_failed"):
                     break
         except asyncio.CancelledError:

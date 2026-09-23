@@ -111,7 +111,10 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
                 response_model=ConceptsExtraction,
             )
             concepts = result.concepts
-            await deps.streamer.emit(state.run_id, "concepts_extracted", {"count": len(concepts)})
+            await deps.streamer.emit(state.run_id, "concepts_extracted", {
+                "count": len(concepts),
+                "items": [{"id": c.id, "name": c.name, "role": c.role} for c in concepts]
+            })
             return {"concepts": concepts}
         except Exception as e:
             return {"status": "failed", "errors": [f"Concept extraction failed: {e}"]}
@@ -130,10 +133,29 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
                 response_model=RelationshipsExtraction,
             )
             relationships = result.relationships
-            await deps.streamer.emit(state.run_id, "relationships_extracted", {"count": len(relationships)})
+            await deps.streamer.emit(state.run_id, "relationships_extracted", {
+                "count": len(relationships),
+                "links": [{"source": r.source, "target": r.target, "relation": r.relationship} for r in relationships]
+            })
             return {"relationships": relationships}
         except Exception as e:
-            return {"status": "failed", "errors": [f"Relationship extraction failed: {e}"]}
+            logger.warning(f"Relationship extraction failed: {e}. Generating fallback flow relationships.")
+            fallback_rels = []
+            for idx in range(len(state.concepts) - 1):
+                fallback_rels.append(
+                    Relationship(
+                        source=state.concepts[idx].id,
+                        target=state.concepts[idx + 1].id,
+                        relationship="relates_to",
+                        direction="forward",
+                    )
+                )
+            await deps.streamer.emit(state.run_id, "relationships_extracted", {
+                "count": len(fallback_rels),
+                "note": "Fallback relationships generated",
+                "links": [{"source": r.source, "target": r.target, "relation": r.relationship} for r in fallback_rels]
+            })
+            return {"relationships": fallback_rels}
 
     async def extract_equations(state: VisionOpsState) -> dict[str, Any]:
         """Node: Extract equations."""
@@ -146,18 +168,18 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
                 response_model=EquationsExtraction,
             )
             equations = result.equations
-            await deps.streamer.emit(state.run_id, "equations_extracted", {"count": len(equations)})
+            await deps.streamer.emit(state.run_id, "equations_extracted", {
+                "count": len(equations),
+                "expressions": [eq.expression for eq in equations]
+            })
             return {"equations": equations}
         except Exception as e:
-            # We don't fail the whole run if equation extraction fails
             logger.warning(f"Equation extraction failed: {e}")
             return {"equations": []}
 
     async def abstract_system(state: VisionOpsState) -> dict[str, Any]:
         """Node: Decide what goes into the diagram."""
         prompt = _load_prompt("abstraction")
-        context = f"Concepts: {len(state.concepts)}\nRelationships: {len(state.relationships)}"
-        # In a real implementation we'd pass the full lists in text, but to save tokens for V1:
         text_context = (
             "Concepts:\n" + "\n".join([f"{c.id}: {c.name} ({c.description})" for c in state.concepts]) +
             "\n\nRelationships:\n" + "\n".join([f"[{i}] {r.source} -> {r.target} ({r.relationship})" for i, r in enumerate(state.relationships)])
@@ -169,13 +191,14 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
                 prompt=prompt,
                 response_model=AbstractionStrategy,
             )
-            # Currently just logging it, we will pass everything to the planner for V1 simplicity
-            # unless we strictly filter. For V1, we filter.
             selected_concepts = [c for c in state.concepts if c.id in result.selected_concept_ids]
-            # Fallback if VLM stripped everything
             if not selected_concepts:
                 selected_concepts = state.concepts
                 
+            await deps.streamer.emit(state.run_id, "system_abstracted", {
+                "strategy": result.strategy,
+                "selected_concept_count": len(selected_concepts),
+            })
             return {"concepts": selected_concepts}
         except Exception as e:
             logger.warning(f"Abstraction failed, using all concepts: {e}")
@@ -190,7 +213,6 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
             "\n\nRelationships:\n" + "\n".join([f"{r.source} -> {r.target} ({r.relationship})" for r in state.relationships])
         )
         
-        # If refining, include previous critique
         if state.critique and not state.critique.passed:
             text_context += f"\n\nCRITIQUE OF PREVIOUS DIAGRAM:\n{state.critique.model_dump_json(indent=2)}\n"
             text_context += "PLEASE FIX THESE ISSUES IN YOUR NEW SPEC."
@@ -201,7 +223,12 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
                 prompt=prompt,
                 response_model=DiagramSpec,
             )
-            await deps.streamer.emit(state.run_id, "diagram_planned")
+            await deps.streamer.emit(state.run_id, "diagram_planned", {
+                "title": spec.title,
+                "layout": spec.layout,
+                "nodes": len(spec.nodes),
+                "edges": len(spec.edges),
+            })
             return {"diagram_spec": spec}
         except Exception as e:
             return {"status": "failed", "errors": [f"Diagram planning failed: {e}"]}
@@ -216,7 +243,10 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
         
         try:
             rendered_path = deps.renderer.render(state.diagram_spec, output_path)
-            await deps.streamer.emit(state.run_id, "diagram_rendered", {"path": str(rendered_path)})
+            await deps.streamer.emit(state.run_id, "diagram_rendered", {
+                "filename": output_filename,
+                "path": str(rendered_path),
+            })
             return {"rendered_diagram": str(rendered_path)}
         except Exception as e:
             return {"status": "failed", "errors": [f"Rendering failed: {e}"]}
@@ -229,7 +259,6 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
         text_context = f"Generated Diagram Spec: {state.diagram_spec.model_dump_json() if state.diagram_spec else 'None'}"
         
         try:
-            # Pass original page AND rendered diagram if available
             images = [state.page_images[0]]
                 
             critique = await deps.client.analyze_multimodal(
@@ -238,12 +267,17 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
                 prompt=prompt,
                 response_model=Critique,
             )
-            await deps.streamer.emit(state.run_id, "critique_completed", {"passed": critique.passed, "score": critique.score})
+            await deps.streamer.emit(state.run_id, "critique_completed", {
+                "passed": critique.passed,
+                "score": critique.score,
+                "missing_concepts": critique.missing_concepts,
+                "suggested_changes": critique.suggested_changes,
+            })
             return {"critique": critique}
         except Exception as e:
-            # If critique fails, we just pass it to avoid infinite loops on VLM failures
             logger.warning(f"Critique failed: {e}")
             fallback_critique = Critique(passed=True, score=1.0)
+            await deps.streamer.emit(state.run_id, "critique_completed", {"passed": True, "score": 1.0, "note": "Fallback passed"})
             return {"critique": fallback_critique}
 
     async def explain(state: VisionOpsState) -> dict[str, Any]:
@@ -257,9 +291,10 @@ def build_graph(deps: GraphDependencies) -> StateGraph:
                 prompt=prompt,
                 response_model=ExplanationResponse,
             )
-            await deps.streamer.emit(state.run_id, "run_completed")
+            await deps.streamer.emit(state.run_id, "run_completed", {"explanation_length": len(result.explanation)})
             return {"explanation": result.explanation, "status": "completed"}
         except Exception as e:
+            await deps.streamer.emit(state.run_id, "run_completed", {"note": "Explanation fallback"})
             return {"status": "completed", "explanation": "Explanation unavailable due to VLM error."}
 
     # Graph Routing

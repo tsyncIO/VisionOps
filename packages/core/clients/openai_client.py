@@ -277,12 +277,14 @@ class OpenAICompatibleVisionModelClient(VisionModelClient):
             return raw_text
 
         # Attempt to parse structured output
+        first_err_msg = ""
         try:
             return self._parse_structured_output(raw_text, response_model)
-        except ModelOutputInvalidError as first_error:
+        except ModelOutputInvalidError as err:
+            first_err_msg = err.message
             logger.warning(
                 "First parse attempt failed, retrying with error feedback: %s",
-                first_error.message,
+                first_err_msg,
             )
 
         # Retry: append the error and raw output to help the model correct itself
@@ -292,7 +294,7 @@ class OpenAICompatibleVisionModelClient(VisionModelClient):
                 "role": "user",
                 "content": (
                     f"Your previous response could not be parsed as valid JSON. "
-                    f"Error: {first_error.message}\n\n"
+                    f"Error: {first_err_msg}\n\n"
                     f"Please respond with ONLY a valid JSON object matching the schema. "
                     f"No markdown, no explanation, just the JSON."
                 ),

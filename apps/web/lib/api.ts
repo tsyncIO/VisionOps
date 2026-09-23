@@ -35,9 +35,6 @@ export async function startRun(documentId: string) {
 export function subscribeToEvents(runId: string, onEvent: (event: any) => void) {
   const eventSource = new EventSource(`${API_BASE}/runs/${runId}/events`);
   
-  // You might want to handle specific named events if you used named SSE
-  // Our backend sends "event: name\ndata: {...}\n\n", which triggers standard message or named event listeners.
-  // We'll listen to all events.
   const eventTypes = [
     "run_started",
     "document_ingested",
@@ -45,6 +42,7 @@ export function subscribeToEvents(runId: string, onEvent: (event: any) => void) 
     "concepts_extracted",
     "relationships_extracted",
     "equations_extracted",
+    "system_abstracted",
     "diagram_planned",
     "diagram_rendered",
     "critique_started",
@@ -55,11 +53,31 @@ export function subscribeToEvents(runId: string, onEvent: (event: any) => void) 
     "run_failed",
   ];
   
+  const handleEvent = (type: string, rawData: string) => {
+    try {
+      const parsed = JSON.parse(rawData);
+      // Unpack nested payload if VisionOpsEvent wrapper was sent
+      const payload = parsed.data !== undefined ? parsed.data : parsed;
+      const eventType = parsed.event || type;
+      onEvent({
+        type: eventType,
+        timestamp: parsed.timestamp || new Date().toISOString(),
+        data: payload
+      });
+    } catch (err) {
+      onEvent({ type, timestamp: new Date().toISOString(), data: { raw: rawData } });
+    }
+  };
+
   eventTypes.forEach((type) => {
     eventSource.addEventListener(type, (e) => {
-      onEvent({ type, data: JSON.parse((e as MessageEvent).data) });
+      handleEvent(type, (e as MessageEvent).data);
     });
   });
+
+  eventSource.onmessage = (e) => {
+    handleEvent("message", e.data);
+  };
 
   return () => eventSource.close();
 }
