@@ -13,7 +13,7 @@ export default function Home() {
   const [svgXml, setSvgXml] = useState<string>("");
 
   // Diagram Viewer Controls
-  const [zoomLevel, setZoomLevel] = useState<number>(125);
+  const [zoomLevel, setZoomLevel] = useState<number>(200);
   const [viewFitMode, setViewFitMode] = useState<"adaptive" | "fit" | "full">("full");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -440,15 +440,15 @@ export default function Home() {
               </div>
 
               {/* Diagram Rendering Viewport */}
-              <div className="flex-1 bg-gray-950 rounded-xl border border-gray-750 flex items-center justify-center p-4 min-h-[520px] overflow-auto shadow-inner relative">
+              <div className="flex-1 bg-gray-950 rounded-xl border border-gray-750 flex items-center justify-center p-4 min-h-[600px] overflow-auto shadow-inner relative">
                 {finalResult?.rendered_diagram ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center py-2 min-h-[480px]">
+                  <div className="w-full h-full flex flex-col items-center justify-start py-4 min-h-[550px] overflow-auto">
                     <div 
-                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full h-full min-h-[440px] rounded-xl bg-slate-950 p-4 shadow-2xl border border-indigo-900/50 [&>svg]:w-full [&>svg]:h-full [&>svg]:min-h-[420px] [&>svg]:max-h-[600px] [&>svg]:block"
+                      className="transition-transform duration-200 ease-out flex justify-center items-center w-full min-w-[1200px] min-h-[500px] rounded-xl bg-slate-950 p-6 shadow-2xl border border-indigo-900/50 [&>svg]:w-full [&>svg]:h-full [&>svg]:min-h-[550px] [&>svg]:min-w-[1200px] [&>svg]:block"
                       style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
                       dangerouslySetInnerHTML={{ __html: svgXml || `<img src="http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}" class="w-full h-full object-contain" />` }}
                     />
-                    <div className="mt-4 flex items-center gap-4">
+                    <div className="mt-6 flex items-center gap-4">
                       <a 
                         href={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`} 
                         target="_blank" 
