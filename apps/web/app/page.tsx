@@ -13,7 +13,7 @@ export default function Home() {
 
   // Diagram Viewer Controls
   const [zoomLevel, setZoomLevel] = useState<number>(100);
-  const [viewFitMode, setViewFitMode] = useState<"adaptive" | "fit" | "full">("adaptive");
+  const [viewFitMode, setViewFitMode] = useState<"adaptive" | "fit" | "full">("full");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 

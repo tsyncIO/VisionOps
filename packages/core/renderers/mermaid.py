@@ -46,7 +46,19 @@ class MermaidRenderer(DiagramRenderer):
                 
             if not output_path.exists():
                 raise RendererError("mmdc completed but output file not found")
-                
+
+            # Post-process SVG for full-scale responsive display
+            try:
+                import re
+                svg_content = output_path.read_text(encoding="utf-8")
+                # Replace fixed width/height with 100% responsive bounds
+                svg_content = re.sub(r'width="[0-9.]+(px)?"', 'width="100%"', svg_content, count=1)
+                svg_content = re.sub(r'height="[0-9.]+(px)?"', 'height="100%"', svg_content, count=1)
+                svg_content = re.sub(r'style="[^"]*max-width:[^"]*"', 'style="width: 100%; height: 100%; max-width: 100%;"', svg_content)
+                output_path.write_text(svg_content, encoding="utf-8")
+            except Exception as e:
+                logger.warning(f"SVG post-processing warning: {e}")
+
             return output_path
             
         finally:
