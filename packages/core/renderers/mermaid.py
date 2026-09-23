@@ -55,7 +55,7 @@ class MermaidRenderer(DiagramRenderer):
     def _generate_mermaid(self, diagram: DiagramSpec) -> str:
         """Convert DiagramSpec to Mermaid syntax with modern styling."""
         lines = [
-            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'fontSize': '15px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#6366f1', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
+            "%%{init: { 'theme': 'dark', 'themeVariables': { 'darkMode': true, 'fontSize': '18px', 'primaryColor': '#1e1b4b', 'primaryTextColor': '#f8fafc', 'primaryBorderColor': '#818cf8', 'lineColor': '#38bdf8', 'secondaryColor': '#065f46', 'tertiaryColor': '#1e293b' } } }%%"
         ]
         
         if diagram.layout == "sequence":
@@ -73,8 +73,8 @@ class MermaidRenderer(DiagramRenderer):
                 arrow = "->>" if edge.direction == "forward" else "-->>"
                 lines.append(f'    {edge.source}{arrow}{edge.target}: {label}')
         else:
-            # Flowchart in Left-to-Right layout for process workflows
-            direction = "TD" if diagram.layout == "flowchart_td" else "LR"
+            # Default to Top-Down (TD) for readable vertical process flowcharts
+            direction = "LR" if diagram.layout == "flowchart_lr" else "TD"
             lines.append(f"graph {direction}")
             
             # Nodes

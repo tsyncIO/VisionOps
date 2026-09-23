@@ -426,7 +426,7 @@ export default function Home() {
               </div>
 
               {/* Diagram Rendering Viewport */}
-              <div className="flex-1 bg-gray-950 rounded-xl border border-gray-750 flex items-center justify-center p-4 min-h-[360px] overflow-auto shadow-inner relative">
+              <div className="flex-1 bg-gray-950 rounded-xl border border-gray-750 flex items-center justify-center p-6 min-h-[500px] overflow-auto shadow-inner relative">
                 {finalResult?.rendered_diagram ? (
                   <div className="w-full flex flex-col items-center overflow-auto py-2">
                     <div 
@@ -436,12 +436,12 @@ export default function Home() {
                       <img 
                         src={`http://localhost:8001/outputs/${finalResult.rendered_diagram.split('/').pop()}`}
                         alt="Real Project Workflow Diagram"
-                        className={`rounded-lg bg-slate-950 p-6 shadow-2xl border border-indigo-900/40 transition-all ${
+                        className={`rounded-xl bg-slate-950 p-6 shadow-2xl border border-indigo-900/50 transition-all ${
                           viewFitMode === "fit" 
-                            ? "max-w-full max-h-[500px] object-contain" 
+                            ? "max-w-full max-h-[600px] object-contain" 
                             : viewFitMode === "full"
                             ? "w-full h-auto object-contain"
-                            : "min-w-[950px] w-auto h-auto object-none"
+                            : "w-full max-w-3xl min-h-[480px] h-auto object-contain"
                         }`}
                       />
                     </div>
